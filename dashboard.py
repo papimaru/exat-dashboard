@@ -20,6 +20,9 @@ for y in range(lastYear):
     yearApiList.append(str(curYear+543))
     curYear -= 1
     
+st.set_page_config(layout='wide', initial_sidebar_state='expanded')
+with open('style.css') as f:
+    st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
 ## Sidebar Control 
 st.sidebar.header('Expressway Authority of Thailand')
 
@@ -59,6 +62,7 @@ def getdata():
             d += r['result']
     with open('accident.json','w', encoding='utf-8') as f:
         json.dump(d, f, ensure_ascii=False, indent=4)
+        
 ## Prepare Data
 f = open('accident.json',encoding='utf-8')
 data = json.load(f)
@@ -111,15 +115,17 @@ col1.metric("อุบัติเหตุทั้งหมด", str(count_all
 col2.metric("บาดเจ็บทั้งหมด", str(sumInjury), str(sumInjury7day))
 col3.metric("เสียชีวิตทั้งหมด", str(sumDead), str(sumDead7day))
 
+r1c1, r1c2 = st.columns((5,5))
 ## Prepare Data last 7 day Count
 accdate_cur = {'accident_date':df_cur.accident_date.value_counts().sort_index().index.tolist(), 'count':df_cur.accident_date.value_counts().sort_index().tolist()}
 df_accdate_cur = pd.DataFrame(data=accdate_cur)
 df_accdate7day = df_accdate_cur[pd.DatetimeIndex(df_accdate_cur['accident_date']) > last7day]
 
 ## Line Chart lasy 7 day Count
-st.markdown('### จำนวนครั้งที่เกิดอุบัติเหตุ 7 วันล่าสุด')
-line_7day = px.line(df_accdate7day, x="accident_date", y="count",color_discrete_sequence=['Green'])
-st.write(line_7day)
+with r1c1:
+    st.markdown('### จำนวนครั้งที่เกิดอุบัติเหตุ 7 วันล่าสุด')
+    line_7day = px.line(df_accdate7day, x="accident_date", y="count",color_discrete_sequence=['Green'])
+    st.write(line_7day)
 
 ## Prepare Data Accident site
 station = df.expw_step.value_counts().index.tolist()
@@ -128,13 +134,14 @@ d = {'station':station, 'count':station_data}
 df_station = pd.DataFrame(data=d)
 
 ## Donut Cart Data Accident site
-st.markdown('### ทางพิเศษที่เกิดอุบัติเหตุ')
-plost.donut_chart(
-    data=df_station,
-    theta='count',
-    color='station',
-    legend='bottom', 
-    use_container_width=True)
+with r1c2:
+    st.markdown('### ทางพิเศษที่เกิดอุบัติเหตุ')
+    plost.pie_chart(
+        data=df_station,
+        theta='count',
+        color='station',
+        legend='bottom', 
+        use_container_width=True,height=400)
 
 
 ## Prepare Data All Count
@@ -144,25 +151,30 @@ df_accdate = pd.DataFrame(data=accdate)
 st.markdown('### จำนวนครั้งที่เกิดอุบัติเหตุ')
 st.line_chart(df_accdate, x = 'accident_date', y = 'count', height = plot_height)
 
+r2c1, r2c2 = st.columns((5,5))
+
 ## Cause of Accident
-cause = {'cause':df.cause.value_counts().sort_values().index.tolist()[-9:], 'count':df.cause.value_counts().sort_values().tolist()[-9:]}
-df_cause = pd.DataFrame(data=cause)
+with r2c1:
+    st.markdown('### สาเหตุที่เกิดอุบัติเหตุ')
+    cause = {'cause':df.cause.value_counts().sort_values().index.tolist()[-9:], 'count':df.cause.value_counts().sort_values().tolist()[-9:]}
+    df_cause = pd.DataFrame(data=cause)
+    fig=px.bar(df_cause,x='cause',y='count',labels={
+        'cause' : 'สาเหตุ',
+        'count': 'จำนวนครั้ง'
+    })
+    st.write(fig)
 
-fig=px.bar(df_cause,x='cause',y='count',labels={
-    'cause' : 'สาเหตุ',
-    'count': 'จำนวนครั้ง'
-})
-st.write(fig)
-
+## Period Time Most Accident
+with r2c2:
+    st.markdown('### ช่วงเวลาที่เกิดอุบัติเหตุ')
+    his = px.histogram(df, y="time",color_discrete_sequence=['indianred'],orientation='h',labels={
+        'time':''
+    })
+    st.write(his)
+    
 ## Table Injury & Dead
 st.markdown('### ผู้บาดเจ็บและเสียชีวิต')
 dfs = df.groupby(['month','year'],as_index = False).sum().sort_values(by=['month','year']).drop(['_id'],axis=1)
 dfs['month'] = dfs['month'].apply(lambda m: calendar.month_name[m])
 st.table(dfs)
 
-## Period Time Most Accident
-st.markdown('### ช่วงเวลาที่เกิดอุบัติเหตุ')
-his = px.histogram(df, y="time",color_discrete_sequence=['indianred'],orientation='h',labels={
-    'time':''
-})
-st.write(his)
