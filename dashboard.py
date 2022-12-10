@@ -43,7 +43,7 @@ def convertTimeToPeriod(time):
     elif time > datetime.time(hour=7)  and time < datetime.time(hour=10):
         return '07:00 - 10:00'
     elif time > datetime.time(hour=11)  and time < datetime.time(hour=14):
-        return '01:00 - 14:00'
+        return '11:00 - 14:00'
     elif time > datetime.time(hour=15)  and time < datetime.time(hour=18):
         return '15:00 - 18:00'
     elif time > datetime.time(hour=19)  and time < datetime.time(hour=22):
